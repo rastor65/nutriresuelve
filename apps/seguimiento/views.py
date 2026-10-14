@@ -1,32 +1,45 @@
-from django.shortcuts import render, get_object_or_404
-from apps.pacientes.models import Paciente
-from .models import Seguimiento
-from django.contrib.auth.decorators import login_required
 from django.db.models import Count
+from django.shortcuts import get_object_or_404
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-@login_required
-def seguimiento_paciente(request, paciente_id):
-    paciente = get_object_or_404(Paciente, id=paciente_id)
-    seguimientos = Seguimiento.objects.filter(paciente=paciente).order_by('fecha')
-    consultas = paciente.consultas.order_by('fecha')
+from apps.pacientes.models import Paciente
+from apps.pacientes.serializers import PacienteSerializer
+from apps.valoracion.serializers import ConsultaSerializer
+from .serializers import SeguimientoSerializer
 
-    # Datos para la gráfica
-    fechas = [str(c.fecha.date()) for c in consultas]
-    imcs = [float(c.imc_calculado) for c in consultas]
 
-    context = {
-        'paciente': paciente,
-        'seguimientos': seguimientos,
-        'consultas': consultas,
-        'fechas': fechas,
-        'imcs': imcs,
-    }
-    return render(request, 'seguimiento/seguimiento.html', context)
+class SeguimientoPacienteAPIView(APIView):
+    serializer_class = SeguimientoSerializer
 
-@login_required
-def lista_seguimientos(request):
-    from apps.pacientes.models import Paciente
-    pacientes = Paciente.objects.annotate(
-        total_consultas=Count('consultas')
-    ).filter(total_consultas__gt=0).order_by('-total_consultas')
-    return render(request, 'seguimiento/lista.html', {'pacientes': pacientes})
+    def get(self, request, paciente_id):
+        paciente = get_object_or_404(Paciente, pk=paciente_id)
+        consultas = list(paciente.consultas.order_by('fecha'))
+        return Response({
+            'paciente': PacienteSerializer(paciente).data,
+            'seguimientos': SeguimientoSerializer(paciente.seguimientos.order_by('fecha'), many=True).data,
+            'consultas': ConsultaSerializer(consultas, many=True).data,
+            'fechas': [str(consulta.fecha.date()) for consulta in consultas],
+            'imcs': [float(consulta.imc_calculado) for consulta in consultas],
+        })
+
+    def post(self, request, paciente_id):
+        paciente = get_object_or_404(Paciente, pk=paciente_id)
+        serializer = SeguimientoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(paciente=paciente)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class ListaSeguimientosAPIView(APIView):
+    def get(self, request):
+        pacientes = Paciente.objects.annotate(total_consultas=Count('consultas')).filter(
+            total_consultas__gt=0
+        ).order_by('-total_consultas')
+        data = []
+        for paciente in pacientes:
+            item = dict(PacienteSerializer(paciente).data)
+            item['total_consultas'] = paciente.total_consultas
+            data.append(item)
+        return Response({'pacientes': data})

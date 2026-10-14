@@ -1,7 +1,15 @@
-from rest_framework import serializers # type: ignore
-from .models import Valoracion
+from rest_framework import serializers
+from .models import Consulta
 
-class ValoracionSerializer(serializers.ModelSerializer):
+
+class ConsultaSerializer(serializers.ModelSerializer):
+    recomendacion = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
-        model = Valoracion
-        fields = '__all__'
+        model = Consulta
+        fields = [
+            'id', 'paciente', 'fecha', 'peso_kg', 'talla_cm', 'imc_calculado',
+            'clasificacion', 'regla_activada', 'observaciones',
+            'validado_por_nutricionista', 'recomendacion',
+        ]
+        read_only_fields = fields
