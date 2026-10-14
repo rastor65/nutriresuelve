@@ -4,10 +4,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
 
 def generar_plan_alimentario(paciente, clasificacion, alimentos):
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        return "Error IA: configura GROQ_API_KEY en el archivo .env para generar el plan alimentario."
+
+    client = Groq(api_key=api_key)
     nombres_alimentos = ", ".join([a.nombre for a in alimentos]) if alimentos else "alimentos básicos del PAE"
 
     prompt = f"""
