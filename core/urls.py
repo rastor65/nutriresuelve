@@ -1,9 +1,17 @@
 from django.urls import include, path
 from core import views
+from apps.pacientes.views import (
+    DetalleEPSAPIView, DetalleRepresentanteAPIView,
+    ListaEPSAPIView, ListaRepresentantesAPIView,
+)
 
 urlpatterns = [
     path('', views.DashboardAPIView.as_view(), name='dashboard'),
     path('pacientes/', include('apps.pacientes.urls')),
+    path('eps/', ListaEPSAPIView.as_view(), name='lista_eps'),
+    path('eps/<int:eps_id>/', DetalleEPSAPIView.as_view(), name='detalle_eps'),
+    path('representantes/', ListaRepresentantesAPIView.as_view(), name='lista_representantes'),
+    path('representantes/<int:representante_id>/', DetalleRepresentanteAPIView.as_view(), name='detalle_representante'),
     path('valoracion/', include('apps.valoracion.urls')),
     path('seguimiento/', include('apps.seguimiento.urls')),
     path('recomendaciones/', include('apps.recomendaciones.urls')),

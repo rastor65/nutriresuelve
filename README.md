@@ -34,7 +34,7 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-El usuario creado permite iniciar sesión en la API. Los datos de EPS, alimentos y reglas expertas se pueden cargar mediante fixtures (`python manage.py loaddata archivo.json`) o desde `python manage.py shell`. Una valoración necesita al menos una regla experta compatible con el paciente.
+El usuario creado permite iniciar sesión en la API. Registra EPS en `/eps/` y representantes legales en `/representantes/` usando sus formularios de DRF o enviando JSON. Los alimentos y reglas expertas se pueden cargar mediante fixtures (`python manage.py loaddata archivo.json`) o desde `python manage.py shell`. Una valoración necesita al menos una regla experta compatible con el paciente.
 
 ## Autenticación con cookies
 
@@ -76,9 +76,13 @@ Con `DEBUG=False`, las cookies requieren HTTPS. Configura `ALLOWED_HOSTS` para e
 | Método | Ruta | Resultado |
 | --- | --- | --- |
 | GET | `/` | Estadísticas y últimos pacientes |
+| GET, POST | `/eps/` | Listar o registrar EPS (`201` al crear) |
+| GET | `/eps/<id>/` | Detalle de EPS |
+| GET, POST | `/representantes/` | Listar o registrar representantes legales (`201` al crear) |
+| GET | `/representantes/<id>/` | Detalle de representante legal |
 | GET | `/pacientes/` | Lista de pacientes |
 | POST | `/pacientes/` o `/pacientes/registrar/` | Registrar paciente (`201`) |
-| GET | `/pacientes/registrar/` | Catálogo de EPS |
+| GET | `/pacientes/registrar/` | Catálogos de EPS y representantes |
 | GET | `/pacientes/<id>/` | Paciente, representante, alergias, restricciones y consultas |
 | GET | `/valoracion/valorar/<paciente_id>/` | Datos del paciente para valoración |
 | POST | `/valoracion/valorar/<paciente_id>/` | Crear consulta y recomendación (`201`) |
@@ -88,6 +92,24 @@ Con `DEBUG=False`, las cookies requieren HTTPS. Configura `ALLOWED_HOSTS` para e
 | GET | `/seguimiento/` | Pacientes con consultas y total de consultas |
 | GET | `/seguimiento/<paciente_id>/` | Seguimientos, consultas, fechas e IMC para gráficas |
 | POST | `/seguimiento/<paciente_id>/` | Registrar seguimiento (`201`) |
+
+Registro de EPS (`POST /eps/`):
+
+```json
+{ "nombre": "EPS de ejemplo" }
+```
+
+Registro de representante legal (`POST /representantes/`):
+
+```json
+{
+  "nombre_completo": "Representante de ejemplo",
+  "telefono": "3000000000",
+  "parentesco": "madre"
+}
+```
+
+Los parentescos admitidos son `padre`, `madre`, `abuelo`, `tio` y `otro`. Ambas respuestas de creación contienen el `id` que puedes enviar en los campos `eps` y `representante` al registrar un paciente. Los formularios de pacientes también ofrecen los registros existentes para seleccionarlos.
 
 Registro de paciente:
 
